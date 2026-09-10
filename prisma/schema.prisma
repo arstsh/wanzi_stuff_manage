@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  username      String          @unique @db.VarChar(50)
+  passwordHash  String          @db.VarChar(255)
+  role          Role            @default(USER)
+  refreshTokens RefreshToken[]
+  createdAt     DateTime        @default(now()) @db.Timestamp(0)
+  updatedAt     DateTime        @updatedAt @db.Timestamp(0)
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique @db.VarChar(255)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamp(0)
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique @db.VarChar(100)
+  description String? @db.Text
+  items       Item[]
+  createdAt   DateTime @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime @updatedAt @db.Timestamp(0)
+
+  @@map("categories")
+}
+
+model Item {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(200)
+  sku         String    @unique @db.VarChar(100)
+  description String?   @db.Text
+  unit        String    @default("件") @db.VarChar(20)
+  price       Decimal   @default(0) @db.Decimal(10, 2)
+  quantity    Int       @default(0)
+  minQuantity Int       @default(0)
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id])
+  logs        InventoryLog[]
+  createdAt   DateTime  @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime  @updatedAt @db.Timestamp(0)
+
+  @@index([categoryId])
+  @@index([sku])
+  @@map("items")
+}
+
+model InventoryLog {
+  id        Int      @id @default(autoincrement())
+  type      LogType
+  quantity  Int
+  note      String?  @db.VarChar(255)
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([itemId])
+  @@index([createdAt])
+  @@map("inventory_logs")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum LogType {
+  IN
+  OUT
+}
