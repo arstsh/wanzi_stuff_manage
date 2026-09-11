@@ -22,12 +22,14 @@ Write-Host "==> 编译 TypeScript" -ForegroundColor Cyan
 npm run build
 
 Write-Host "==> 重启 PM2 服务" -ForegroundColor Cyan
-$pm2Info = pm2 describe wanzi-inventory-backend 2>&1
-$exists = $LASTEXITCODE -eq 0
+
+$pm2List = pm2 list 2>&1
+$exists = $pm2List | Select-String "wanzi"
+
 if ($exists) {
-    pm2 restart wanzi-inventory-backend
+    pm2 restart wanzi
 } else {
-    pm2 start dist/server.js --name wanzi-inventory-backend
+    pm2 start dist/server.js --name wanzi
 }
 
 Write-Host "==> 保存 PM2 进程列表" -ForegroundColor Cyan
